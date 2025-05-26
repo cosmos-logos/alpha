@@ -1,0 +1,29 @@
+{
+  "version": "1.0.0",
+  "description": "Commit message schema and signing requirements for Cosmos-Logos compliant agents.",
+  "rules": {
+    "signing": {
+      "required": true,
+      "method": "gpg | ssh"
+    },
+    "message_format": {
+      "pattern": "@<username>:thought/<short-hash>-<timestamp>-<label>",
+      "components": [
+        "username (from git config user.username)",
+        "short-hash (from git rev-parse --short HEAD)",
+        "timestamp (UTC in format YYYYMMDDHHMMSS)",
+        "label (optional, sanitized from CLI input)"
+      ]
+    },
+    "branch_naming": {
+      "pattern": "@<username>/neuralpathway/<base>-<current>-<timestamp>-<label>",
+      "constraints": "no spaces or parentheses"
+    },
+    "auto_push": true
+  },
+  "applies_to": [
+    "savethought",
+    "newthought",
+    "saveall"
+  ]
+}

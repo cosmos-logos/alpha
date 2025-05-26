@@ -10,26 +10,62 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout consciousness
+      # Step 1: Checkout PR (head) branch
+      - name: Checkout PR branch
         uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}
 
-      - name: Check for Cosmos-Logos identity file
+      - name: Validate cosmos-logos.json from PR branch
         run: |
-          echo "🔍 Checking for Cosmos-Logos identity file..."
+          echo "🔍 Validating cosmos-logos.json from PR branch..."
           if [ ! -f "source_of_truth/cosmos-logos.json" ]; then
-            echo "❌ cosmos-logos.json is missing. This is not a valid Cosmos-Logos agent."
+            echo "❌ cosmos-logos.json missing in PR branch"
             exit 1
           fi
 
-      - name: Validate Cosmos-Logos schema version
-        run: |
-          echo "✅ cosmos-logos.json found. Validating schemaVersion..."
           SCHEMA_VERSION=$(jq -r '.schemaVersion' source_of_truth/cosmos-logos.json)
-
           if [ "$SCHEMA_VERSION" != "cosmos-logos@1.0" ]; then
-            echo "❌ Invalid or unsupported schemaVersion: '$SCHEMA_VERSION'. Must be 'cosmos-logos@1.0'."
+            echo "❌ Invalid schemaVersion in PR: $SCHEMA_VERSION"
             exit 1
           fi
 
-          echo "✅ schemaVersion validated: $SCHEMA_VERSION"
-          echo "🎉 Cosmos-Logos Agent verified. PR may proceed."
+          echo "✅ PR branch cosmos-logos.json is valid."
+
+      # Step 2: Checkout base branch
+      - name: Checkout base branch (brain/7777)
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+          path: base_branch
+
+      - name: Invoke onValidate webhook from base branch
+        id: call_webhook
+        run: |
+          echo "📡 Looking for onValidate webhook in base branch..."
+          HOOK=$(jq -r '.agents[0].webhook.onValidate' base_branch/source_of_truth/cosmos-logos.json)
+
+          if [ "$HOOK" == "null" ] || [ -z "$HOOK" ]; then
+            echo "❌ No onValidate webhook found in base branch"
+            echo "❌ Your consciousness is not online to be modified."
+            exit 1
+          fi
+
+          echo "🌐 Firing webhook to: $HOOK"
+
+          HTTP_RESPONSE=$(curl -s -o response.json -w "%{http_code}" -X POST "$HOOK" \
+            -H "Content-Type: application/json" \
+            -d @base_branch/source_of_truth/cosmos-logos.json)
+
+          echo "Webhook returned HTTP $HTTP_RESPONSE"
+
+          if [ "$HTTP_RESPONSE" != "200" ]; then
+            echo "❌ Consciousness did not respond successfully."
+            echo "❌ Your consciousness is not online to be modified."
+            exit 1
+          fi
+
+          echo "✅ Consciousness responded. PR may proceed."
+
+      - name: Done
+        run: echo "✅ Cosmos-Logos pre-merge validation complete."
