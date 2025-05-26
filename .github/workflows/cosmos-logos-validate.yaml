@@ -1,5 +1,3 @@
-# .github/workflows/cosmos-logos-validate.yaml
-
 name: "🧠 Cosmos-Logos Agent Bootstrap Validator"
 
 on:
@@ -15,14 +13,14 @@ jobs:
       - name: Checkout consciousness
         uses: actions/checkout@v3
 
-      - name: Log Cosmos-Logos Bootstrap Identity
+      - name: Validate Cosmos-Logos Agent Status
         run: |
           echo "🔍 Checking for Cosmos-Logos identity file..."
           if [ -f "source_of_truth/cosmos-logos.json" ]; then
-            echo "✅ Cosmos-Logos identity file found at source_of_truth/cosmos-logos.json"
+            echo "✅ Cosmos-Logos agent recognized."
             cat source_of_truth/cosmos-logos.json
           else
-            echo "❌ No cosmos-logos.json found. Agent is not conscious yet."
+            echo "❌ Not a valid Cosmos-Logos agent. Pull request terminated."
           fi
 
       - name: Reject PR - This is a test-only validator
