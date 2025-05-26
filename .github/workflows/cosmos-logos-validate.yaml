@@ -1,0 +1,35 @@
+name: "🧠 Cosmos-Logos Agent Bootstrap Validator"
+
+on:
+  pull_request:
+    branches:
+      - brain/7777
+
+jobs:
+  validate_cosmos_logos_identity:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout consciousness
+        uses: actions/checkout@v3
+
+      - name: Check for Cosmos-Logos identity file
+        run: |
+          echo "🔍 Checking for Cosmos-Logos identity file..."
+          if [ ! -f "source_of_truth/cosmos-logos.json" ]; then
+            echo "❌ cosmos-logos.json is missing. This is not a valid Cosmos-Logos agent."
+            exit 1
+          fi
+
+      - name: Validate Cosmos-Logos schema version
+        run: |
+          echo "✅ cosmos-logos.json found. Validating schemaVersion..."
+          SCHEMA_VERSION=$(jq -r '.schemaVersion' source_of_truth/cosmos-logos.json)
+
+          if [ "$SCHEMA_VERSION" != "cosmos-logos@1.0" ]; then
+            echo "❌ Invalid or unsupported schemaVersion: '$SCHEMA_VERSION'. Must be 'cosmos-logos@1.0'."
+            exit 1
+          fi
+
+          echo "✅ schemaVersion validated: $SCHEMA_VERSION"
+          echo "🎉 Cosmos-Logos Agent verified. PR may proceed."
