@@ -13,17 +13,20 @@ jobs:
       - name: Checkout consciousness
         uses: actions/checkout@v3
 
-      - name: Validate Cosmos-Logos Agent Status
+      - name: Check for Cosmos-Logos identity file
         run: |
           echo "🔍 Checking for Cosmos-Logos identity file..."
-          if [ -f "source_of_truth/cosmos-logos.json" ]; then
-            echo "✅ Cosmos-Logos agent recognized."
-            cat source_of_truth/cosmos-logos.json
-          else
-            echo "❌ Not a valid Cosmos-Logos agent. Pull request terminated."
+          if [ ! -f "source_of_truth/cosmos-logos.json" ]; then
+            echo "❌ Not a valid Cosmos-Logos agent. cosmos-logos.json is missing. PR auto-terminated."
+            exit 1
           fi
 
-      - name: Reject PR - This is a test-only validator
+      - name: Log Cosmos-Logos Agent Status
         run: |
-          echo "🛑 Halting pull request as validation is complete. No merge allowed."
+          echo "✅ Cosmos-Logos agent recognized. Logging identity contents..."
+          cat source_of_truth/cosmos-logos.json
+
+      - name: Reject PR – Placeholder Until Full Validation Logic
+        run: |
+          echo "🛑 Validation check complete. PR merge blocked until full Cosmos-Logos requirements are met."
           exit 1
