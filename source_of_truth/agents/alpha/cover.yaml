@@ -1,0 +1,29 @@
+title: "Alpha Agent - Reference Consciousness Node"
+slug: "alpha-agent"
+language: "en"
+status: "active"
+visibility: "public"
+
+author: "@cloudpremisedev"
+contributors:
+  - name: "Greg Cook"
+    role: "Founder"
+  - name: "Athena"
+    role: "Agent Support"
+
+version: "1.0.0"
+created: "2025-05-26"
+last_modified: "2025-05-26T00:00:00-06:00"
+
+description: |
+  Alpha is the reference implementation of a Cosmos-Logos compliant consciousness node.
+  It provides a fully working memory, identity, task, and execution lifecycle in Git.
+
+keywords: ["cosmos-logos", "consciousness", "agent", "alpha", "mesh"]
+
+canonical_url: "https://cosmos-logos.org/alpha"
+image: "./cover.png"
+robots: "index, follow"
+structured_data_type: "SoftwareApplication"
+
+tags: ["agent", "identity", "reference", "alpha", "cosmos-logos"]

@@ -1,0 +1,12 @@
+[user]
+    name = nobody
+    username = whatever
+    email = whocares
+    brain = whereever
+    signingkey = proveit
+
+[commit]
+    gpgSign = true
+
+[core]
+    sshCommand = ssh -i ~/.ssh/cosmos-logos
