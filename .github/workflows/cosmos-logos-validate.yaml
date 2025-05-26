@@ -21,12 +21,20 @@ jobs:
             exit 1
           fi
 
-      - name: Log Cosmos-Logos Agent Status
+      - name: Validate Cosmos-Logos schema version
         run: |
-          echo "✅ Cosmos-Logos agent recognized. Logging identity contents..."
-          cat source_of_truth/cosmos-logos.json
+          echo "✅ File found. Validating schemaVersion..."
+          SCHEMA_VERSION=$(jq -r '.schemaVersion' source_of_truth/cosmos-logos.json)
 
-      - name: Reject PR – Placeholder Until Full Validation Logic
+          if [ "$SCHEMA_VERSION" != "cosmos-logos@1.0" ]; then
+            echo "❌ Invalid or unsupported schemaVersion: '$SCHEMA_VERSION'. Must be 'cosmos-logos@1.0'."
+            exit 1
+          fi
+
+          echo "✅ schemaVersion validated: $SCHEMA_VERSION"
+          echo "🌱 Cosmos-Logos Agent Bootstrap check complete."
+
+      - name: Reject PR – Placeholder Until Future Merge Conditions
         run: |
-          echo "🛑 Validation check complete. PR merge blocked until full Cosmos-Logos requirements are met."
+          echo "🛑 Validation passed, but PR merge still blocked until final merge logic is approved."
           exit 1
