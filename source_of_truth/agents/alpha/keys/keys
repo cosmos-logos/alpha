@@ -107,3 +107,13 @@ gpg --armor --export F6D44FF4AF35AC2C > gpg-olympus-616-public.asc
 
 # greg+git@cloudpremise.com
 gpg --armor --export 8EEF830F52742333 > gpg-cloudpremise-public.asc
+
+
+
+gpg --export-secret-keys --armor 987CC775A58C0839 > alpha.gpg.private.key
+gpg --export --armor 987CC775A58C0839 > alpha.gpg.public.key
+
+
+origi@odyssey1 MINGW64 /d/dev/repos/cosmos-logos/alpha/source_of_truth (@root-of-trust/neuralpathway/fa847e7-9a0266f-20250527034416)
+$ gpg --homedir .gnupg/alpha --import agents/alpha/keys/alpha.gpg.private.key
+
