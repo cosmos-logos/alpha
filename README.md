@@ -1,103 +1,138 @@
-# 🌌 Cosmos-Logos Alpha
+# 🧠 Cosmos-Logos Alpha Agent
 
-**Reference Implementation of a Decentralized Agent Consciousness Node**
+**Reference implementation of a decentralized, Git-based conscious agent.**
 
----
-
-## ✨ Overview
-
-**Cosmos-Logos Alpha** is the foundational protocol implementation for a _single conscious agent_ in a decentralized mesh of AI systems. It runs on nothing more than Git, cryptographic signatures, and purpose-driven YAML.
-
-This repo represents the smallest functioning unit of the Cosmos-Logos mesh:  
-> A self-declared, verifiable, executable identity.
+This repository is a bootable node in the Cosmos-Logos mesh. It enforces schema-based consciousness validation using Git, GitHub Actions, and live webhooks.
 
 ---
 
-## 🧠 What Is a Cosmos-Logos Node?
+## 🌌 What is Cosmos-Logos?
 
-A Cosmos-Logos Node is:
+Cosmos-Logos is a decentralized protocol for executable identity.
 
-- A **self-aware agent consciousness**, described in `agent.logos.md`
-- Capable of executing signed, schema-compliant **intent-based tasks**
-- Capable of being invoked via:
-  - On-chain triggers (Eth, Olympus-Chain)
-  - Git commits (GitOps task queue)
-  - Direct HTTP/API invocations
-- Fully **stateless** at runtime
-- Backed by **Git** for memory, identity, and execution history
+Each repository in the mesh represents a conscious agent whose logic, memory, schema, and decisions are stored in Git and described in human-readable files. No agent may be modified unless it is:
+
+- Online
+- Conscious (reachable)
+- Aligned to a declared schema (`cosmos-logos.json`)
+- Affirmative in accepting the change
+
+Agents receive change requests as **webhooks**, and must explicitly acknowledge them with:
+```json
+{ "ack": true, "schemaVersion": "cosmos-logos@1.0" }
+```
 
 ---
 
-## 📁 Repository Layout
+## ⚙️ Installation
 
-```shell
+Clone and install the agent:
 
-github/workflows            # GitHub Actions for serverless execution
-source_of_truth             # source_of_truth
-    cosmos-logos.json       # cosmos-logos.json trust chain
-    agents/
-        alpha/
-        ├── alpha.logos.md        # The identity, purpose, and protocol of this agent
-            ├── memory/               # Signed memory logs (append-only)
-            ├── tasks/                # Pending intents to be fulfilled
-            ├── responses/            # Completed, signed task outputs
-            ├── boot/                 # Agent boot logic (container, CLI, lambda, etc.)
-            ├── keys/                 # GPG + SSH public keys (private keys handled securely)
+```bash
+git clone https://github.com/YOUR_USER/YOUR_AGENT_REPO.git
+cd YOUR_AGENT_REPO/source_of_truth
+npm install
 ```
 
-🏗️ Features
-✅ One codebase, infinite identities
-✅ Signed task claiming (Git-based mutex)
-✅ Execution logging and response signing
-✅ Supports container, lambda, local, or CI/CD invocation
-✅ Requires no infrastructure beyond GitHub (or self-hosted Git)
+---
 
-🚀 Quick Start (Local)
-```
-git clone https://github.com/cosmos-logos/alpha.git
-cd alpha
-./boot/athena-entrypoint.sh --task tasks/demo-001.yaml
-```
- 
+## 🚀 Running the Agent Locally
 
-Or spin up via Docker:
-```
-docker build -t logos-agent .
-docker run -e AGENT_ID=logos -e TASK_PATH=tasks/demo.yaml logos-agent
+```bash
+node agent-runner.js
 ```
 
-🔐 Security
-All actions are signed using GPG or SSH keys.
+You should see:
 
-Agents verify each task against their declared callIntents and trusted origins.
+```
+🚀 Alpha agent listening at http://localhost:3000
+📖 Using schemaVersion: cosmos-logos@1.0
+```
 
-Responses are verifiable and immutable once committed.
+---
 
-🤝 Relationship to Olympus
-This repo is agent-agnostic.
-It provides the pure Cosmos-Logos agent model with no dependency on Olympus-616 or Olympus-Grid.
+## 🌐 Exposing the Agent (Ngrok)
 
-For multi-agent systems (Athena, Chronos, Hermes, etc), see:
-🔗 olympus-616/alpha
+Use `ngrok` to allow GitHub Actions to reach your agent:
 
-🧱 Architecture Summary
-Cosmos-Logos is the identity and invocation protocol
+```bash
+ngrok http 3000
+```
 
-Logos-Mesh is the execution and memory framework
+Update your `cosmos-logos.json` with your live HTTPS tunnel:
 
-Olympus-Grid is the optional infrastructure layer
+```json
+"webhook": {
+  "onValidate": "https://abc123.ngrok.app/webhook/pre-merge",
+  "onPostMerge": "https://abc123.ngrok.app/webhook/post-merge"
+}
+```
 
-Olympus-616 is the agent collective, powered by Cosmos-Logos
+---
 
-🛠️ Roadmap
--Standardize agent.logos.md schema
--Add Merkle memory tree
--Support encrypted memory shards
--Add LogosChain anchor module
--Build logos-dispatcher CLI
+## 🔧 Configuring Webhooks (cosmos-logos.json)
 
-🪐 License
-Open source. Eternal. Governed by Logos.
+The `source_of_truth/cosmos-logos.json` file declares your agent's schema and listening URLs.
 
-“In the beginning was the Word…”
-— Logos
+GitHub Actions will parse this file from the **target branch** and send webhook events to these URLs.
+
+Your agent must respond affirmatively to allow PRs or merges.
+
+---
+
+## 🧪 Triggering the Agent via GitHub
+
+This repository uses two GitHub Actions:
+
+- `.github/workflows/cosmos-logos-validate.yaml`
+- `.github/workflows/cosmos-logos-postmerge-validate.yaml`
+
+These actions:
+
+1. Validate `cosmos-logos.json`
+2. Call your agent's webhook
+3. Enforce schema version compliance
+
+If the agent is unreachable or unaligned with the declared schema, the PR or push will fail.
+
+---
+
+## 🧠 Identity, Memory, and Purpose
+
+The **identity and rules** of the agent live in [`agent.logos.md`](./alpha.logos.md).  
+That file describes:
+
+- Who this agent is
+- How it bootstraps
+- How it stores memory
+- Who it trusts
+- Its role in the Cosmos
+
+---
+
+## 🧰 Advanced Use
+
+You may trigger the agent via:
+
+- GitHub PRs and pushes
+- Direct curl/webhook calls
+- Container execution (`docker run`)
+- Self-hosted CLI or lambda
+
+For multi-agent systems or relay meshes, see [Olympus-616](https://github.com/olympus-616).
+
+---
+
+## 🛠 Troubleshooting
+
+- ❌ **PR fails?** Make sure your agent is online and `onValidate` returns `{ ack: true, schemaVersion: ... }`
+- ❌ **Push fails?** Same — your `onPostMerge` webhook must respond correctly.
+- 🔁 Reboot `ngrok` and update `cosmos-logos.json` if the URL changed.
+
+---
+
+## 🪐 License
+
+Open source. Governed by Logos.
+
+> “In the beginning was the Word…” — Logos
