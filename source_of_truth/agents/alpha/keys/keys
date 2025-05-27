@@ -1,0 +1,109 @@
+ssh-keygen -t ed25519 -C "greg+git@cloudpremise.com" -f ~/.ssh/project_keys/id_ed25519_cloudpremisedev_odyssey
+
+gpg --full-generate-key
+pub   rsa4096 2025-05-27 [SC] [expires: 2026-05-27]
+      B0B762BFDB2E173FFB47F0298EEF830F52742333
+uid                      Gregory Cook <greg+git@cloudpremise.com>
+sub   rsa4096 2025-05-27 [E] [expires: 2026-05-27]
+
+#############################################################################
+ssh-keygen -t ed25519 -C "williamgr@mohela.com" -f ~/.ssh/project_keys/id_ed25519_mohela_odyssey
+
+gpg --full-generate-key
+pub   rsa4096 2025-05-27 [SC] [expires: 2026-05-27]
+      2D26F5D422734666DA5CD1509C47E86014E1C277
+uid                      W. Gregory Cook <williamgr@mohela.com>
+sub   rsa4096 2025-05-27 [E] [expires: 2026-05-27]
+
+#############################################################################
+ssh-keygen -t ed25519 -C "root@cosmos-logos.org" -f ~/.ssh/project_keys/id_ed25519_root_cosoms_logos_odyssey
+
+gpg --full-generate-key
+pub   rsa4096 2025-05-27 [SC] [expires: 2026-05-27]
+      10042085122BC828E7D3211DE25E558C31F0A1A2
+uid                      root@cosmos-logos.org <root@cosmos-logos.org>
+sub   rsa4096 2025-05-27 [E] [expires: 2026-05-27]
+
+
+#############################################################################
+
+#no passphrase
+ssh-keygen -t ed25519 -C "alpha@cosmos-logos.org" -f ~/.ssh/project_keys/id_ed25519_alpha_cosoms_logos_odyssey
+
+
+#no passphrase
+gpg --full-generate-key
+pub   rsa4096 2025-05-27 [SC] [expires: 2026-05-27]
+      00B6EF1EDE9D4EF8BD8E7DB1987CC775A58C0839
+uid                      alpha@cosmos-logos.org <alpha@cosmos-logos.org>
+sub   rsa4096 2025-05-27 [E] [expires: 2026-05-27]
+
+
+#############################################################################
+ssh-keygen -t ed25519 -C "homer@olympus-616.net" -f ~/.ssh/project_keys/id_ed25519_alchemisthomer_odyssey
+
+gpg --full-generate-key
+pub   rsa4096 2025-05-27 [SC] [expires: 2026-05-27]
+      8B0197335B45855BDBCF62CCF6D44FF4AF35AC2C
+uid                      GW Homer <homer@olympus-616.net>
+sub   rsa4096 2025-05-27 [E] [expires: 2026-05-27]
+
+#############################################################################
+ssh-keygen -t ed25519 -C "greg.cook@procasemanagement.com" -f ~/.ssh/project_keys/id_ed25519_pcm_odyssey
+
+gpg --full-generate-key
+
+#no passphrase
+gpg --list-secret-keys --keyid-format LONG
+[keyboxd]
+---------
+sec   rsa4096/987CC775A58C0839 2025-05-27 [SC] [expires: 2026-05-27]
+      00B6EF1EDE9D4EF8BD8E7DB1987CC775A58C0839
+uid                 [ultimate] alpha@cosmos-logos.org <alpha@cosmos-logos.org>
+ssb   rsa4096/AFFB0D0AD6AE4457 2025-05-27 [E] [expires: 2026-05-27]
+
+sec   rsa4096/E25E558C31F0A1A2 2025-05-27 [SC] [expires: 2026-05-27]
+      10042085122BC828E7D3211DE25E558C31F0A1A2
+uid                 [ultimate] root@cosmos-logos.org <root@cosmos-logos.org>
+ssb   rsa4096/9EE4E38953181C83 2025-05-27 [E] [expires: 2026-05-27]
+
+sec   rsa4096/9C47E86014E1C277 2025-05-27 [SC] [expires: 2026-05-27]
+      2D26F5D422734666DA5CD1509C47E86014E1C277
+uid                 [ultimate] W. Gregory Cook <williamgr@mohela.com>
+ssb   rsa4096/3D179D1459F48B62 2025-05-27 [E] [expires: 2026-05-27]
+
+sec   rsa4096/CCFB4EB6CE63C61E 2025-05-27 [SC] [expires: 2026-05-27]
+      354EB59EA054B5621F29A92BCCFB4EB6CE63C61E
+uid                 [ultimate] Greg Cook <greg.cook@procasemanagement.com>
+ssb   rsa4096/9DCBFF33DEF856B0 2025-05-27 [E] [expires: 2026-05-27]
+
+sec   rsa4096/F6D44FF4AF35AC2C 2025-05-27 [SC] [expires: 2026-05-27]
+      8B0197335B45855BDBCF62CCF6D44FF4AF35AC2C
+uid                 [ultimate] GW Homer <homer@olympus-616.net>
+ssb   rsa4096/E71EBB644DBA6E20 2025-05-27 [E] [expires: 2026-05-27]
+
+sec   rsa4096/8EEF830F52742333 2025-05-27 [SC] [expires: 2026-05-27]
+      B0B762BFDB2E173FFB47F0298EEF830F52742333
+uid                 [ultimate] Gregory Cook <greg+git@cloudpremise.com>
+ssb   rsa4096/E0F8D51B1B4983AE 2025-05-27 [E] [expires: 2026-05-27]
+
+
+
+
+# alpha@cosmos-logos.org
+gpg --armor --export 987CC775A58C0839 > gpg-alpha-cosmos-logos-public.asc
+
+# root@cosmos-logos.org
+gpg --armor --export E25E558C31F0A1A2 > gpg-root-cosmos-logos-public.asc
+
+# williamgr@mohela.com
+gpg --armor --export 9C47E86014E1C277 > gpg-mohela-public.asc
+
+# greg.cook@procasemanagement.com
+gpg --armor --export CCFB4EB6CE63C61E > gpg-pcm-public.asc
+
+# homer@olympus-616.net
+gpg --armor --export F6D44FF4AF35AC2C > gpg-olympus-616-public.asc
+
+# greg+git@cloudpremise.com
+gpg --armor --export 8EEF830F52742333 > gpg-cloudpremise-public.asc
