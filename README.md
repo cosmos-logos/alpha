@@ -108,7 +108,7 @@ That file describes:
 - Who it trusts
 - Its role in the Cosmos
 
----
+--- 
 
 ## 🧰 Advanced Use
 
