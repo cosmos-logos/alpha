@@ -144,8 +144,8 @@ function writeMemoryLog(eventType, payload) {
 
 app.use(bodyParser.json());
 
-app.post('/webhook/pre-commit', async (req, res) => {
-  console.log('⚡ [POST-MERGE] Webhook hit.');
+app.post('/webhook/pre-merge', async (req, res) => {
+  console.log('⚡ [PRE-COMMIT] Webhook hit.');
   console.log('🔍 Payload:', JSON.stringify(req.body, null, 2));
 
   try {
@@ -161,66 +161,15 @@ app.post('/webhook/pre-commit', async (req, res) => {
     return res.status(500).json({ ack: false, error: 'Memory write failed.' });
   }
 
-  const { filepath, filename } = log;
-  const branchName = `agent/${AGENT_NAME}/${filename.replace('.json', '')}`;
+  const { filename } = log;
 
-  try {
-    console.log(`🌱 Creating branch ${branchName}`);
-    execSync(`git checkout -b ${branchName}`, { stdio: 'inherit' });
-
-    const relativeFilePath = path.relative(process.cwd(), filepath);
-    console.log(`➕ Adding file ${relativeFilePath}`);
-    execSync(`git add ${relativeFilePath}`, { stdio: 'inherit' });
-
-    console.log(`📦 Checking git status`);
-    execSync('git status', { stdio: 'inherit' });
-
-    // 🔍 Log Git identity and signing key info
-    console.log('🪪 Git & GPG identity diagnostics');
-    try {
-      const userName = execSync('git config user.name').toString().trim();
-      const userEmail = execSync('git config user.email').toString().trim();
-      const signingKey = execSync('git config user.signingkey').toString().trim();
-      console.log(`👤 Git User: ${userName}`);
-      console.log(`📧 Git Email: ${userEmail}`);
-      console.log(`🔏 Signing Key: ${signingKey}`);
-    } catch (err) {
-      console.error('❌ Failed to read Git identity:', err.message);
-    }
-
-    try {
-      const gpgList = execSync(`${GPG_EXE} --homedir "${GPG_HOME}" --list-secret-keys --keyid-format LONG`, { encoding: 'utf8' });
-      console.log('🔐 Available GPG Keys:\n' + gpgList);
-    } catch (err) {
-      console.error('❌ Failed to list GPG keys:', err.message);
-    }
-
-    console.log(`✍️ Committing with GPG signing (runtime key ID ${SIGNING_KEY_ID})`);
-    execSync(`git commit -m "🧠 Transaction log: ${filename}" -S${SIGNING_KEY_ID}`, { stdio: 'inherit' });
-
-    console.log(`🚀 Pushing branch to origin`);
-    execSync(`git push -u origin ${branchName}`, { stdio: 'inherit' });
-
-    const commitHash = execSync('git rev-parse HEAD').toString().trim();
-    console.log(`🔗 Commit hash: ${commitHash}`);
-
-    const prTitle = `🔁 Transaction Log: ${filename}`;
-    const prBody = `This pull request has been submitted for review by agent **${AGENT_NAME}**.\n\n- **Memory File:** \\`${filename}\\`\n- **Schema Version:** \\`${schemaVersion}\\`\n- **Commit:** \\`${commitHash}\\``;
-
-    console.log(`📬 Creating pull request`);
-    execSync(`${GH_CLI_PATH} pr create --base ${BASE_BRANCH} --head ${branchName} --title "${prTitle}" --body "${prBody}"`, { stdio: 'inherit' });
-
-    console.log("✅ Pull request successfully created.");
-  } catch (err) {
-    console.error("❌ PR pipeline failed:", err.message);
-    return res.status(500).json({ ack: false, error: err.message });
-  }
-
+  console.log(`🧾 Logged pending PR review as: ${filename}`);
   res.json({
     ack: true,
     schemaVersion
   });
 });
+
 
 console.log('🧪 Running SSH identity check...');
 try {
