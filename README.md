@@ -122,7 +122,7 @@ You may trigger the agent via:
 For multi-agent systems or relay meshes, see [Olympus-616](https://github.com/olympus-616).
 
 ---
-
+ 
 ## 🛠 Troubleshooting
 
 - ❌ **PR fails?** Make sure your agent is online and `onValidate` returns `{ ack: true, schemaVersion: ... }`

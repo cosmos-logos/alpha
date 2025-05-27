@@ -1,0 +1,12 @@
+{
+  "event": "post-merge",
+  "agent": "alpha",
+  "action": "merge completed",
+  "source_branch": "feature/xyz",
+  "target_branch": "brain/7777",
+  "timestamp": "2025-05-26T20:23:56-06:00",
+  "meta": {
+    "user": "root-of-trust",
+    "description": "Testing transaction logging from cURL"
+  }
+}
