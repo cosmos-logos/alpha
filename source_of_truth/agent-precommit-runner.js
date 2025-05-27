@@ -144,7 +144,7 @@ function writeMemoryLog(eventType, payload) {
 
 app.use(bodyParser.json());
 
-app.post('/webhook/post-merge', async (req, res) => {
+app.post('/webhook/pre-commit', async (req, res) => {
   console.log('⚡ [POST-MERGE] Webhook hit.');
   console.log('🔍 Payload:', JSON.stringify(req.body, null, 2));
 
@@ -156,7 +156,7 @@ app.post('/webhook/post-merge', async (req, res) => {
     return res.status(400).json({ ack: false, error: validationError.message });
   }
 
-  const log = writeMemoryLog('post-merge', req.body);
+  const log = writeMemoryLog('pre-commit', req.body);
   if (!log) {
     return res.status(500).json({ ack: false, error: 'Memory write failed.' });
   }
@@ -205,7 +205,7 @@ app.post('/webhook/post-merge', async (req, res) => {
     console.log(`🔗 Commit hash: ${commitHash}`);
 
     const prTitle = `🔁 Transaction Log: ${filename}`;
-    const prBody = `This pull request has been confirmed and logged by agent **${AGENT_NAME}**.\n\n- **Memory File:** \\`${filename}\\`\n- **Schema Version:** \\`${schemaVersion}\\`\n- **Commit:** \\`${commitHash}\\``;
+    const prBody = `This pull request has been submitted for review by agent **${AGENT_NAME}**.\n\n- **Memory File:** \\`${filename}\\`\n- **Schema Version:** \\`${schemaVersion}\\`\n- **Commit:** \\`${commitHash}\\``;
 
     console.log(`📬 Creating pull request`);
     execSync(`${GH_CLI_PATH} pr create --base ${BASE_BRANCH} --head ${branchName} --title "${prTitle}" --body "${prBody}"`, { stdio: 'inherit' });
