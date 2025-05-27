@@ -2,12 +2,20 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const { execSync } = require('child_process');
+const fetch = require('node-fetch');
 
 const app = express();
 const PORT = 3000;
 
 const COSMOS_FILE = path.join(__dirname, 'cosmos-logos.json');
+const GITHUB_OWNER = 'cosmos-logos';
+const GITHUB_REPO = 'alpha';
+const BASE_BRANCH = 'brain/7777';
+const GITHUB_API_URL = "https://api.github.com/repos/" + GITHUB_OWNER + "/" + GITHUB_REPO + "/pulls";
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+
 let schemaVersion = 'unknown';
 
 try {
@@ -21,65 +29,90 @@ try {
 
 app.use(bodyParser.json());
 
-function writeMemoryLog(eventType, payload) {
+function generateFilename(eventType) {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const hash = crypto.createHash('sha256').update(timestamp).digest('hex').slice(0, 8);
+  return `${timestamp}-${eventType}-${hash}.json`;
+}
+
+function writeMemoryLog(eventType, payload) {
+  const filename = generateFilename(eventType);
   const memoryPath = path.join(__dirname, 'agents', 'alpha', 'memory');
+  const filepath = path.join(memoryPath, filename);
 
   try {
     if (!fs.existsSync(memoryPath)) {
       fs.mkdirSync(memoryPath, { recursive: true });
     }
-
-    const filename = `${timestamp}-${eventType}.json`;
-    const filepath = path.join(memoryPath, filename);
     fs.writeFileSync(filepath, JSON.stringify(payload, null, 2));
-
     console.log(`📝 Memory written to ${filepath}`);
-    return { filepath, timestamp };
+    return { filepath, filename };
   } catch (err) {
-    console.error(`❌ Failed to write ${eventType} memory log:`, err.message);
+    console.error(`❌ Failed to write memory log:`, err.message);
     return null;
   }
 }
 
-app.post('/webhook/pre-merge', (req, res) => {
-  console.log('🧠 [PRE-MERGE] Webhook received!');
-  console.log(JSON.stringify(req.body, null, 2));
+async function createGitHubPullRequest(branch, title, body) {
+  const payload = {
+    title,
+    head: branch,
+    base: BASE_BRANCH,
+    body
+  };
 
-  writeMemoryLog('pre-merge', req.body);
+  const headers = {
+    'Authorization': `Bearer ${GITHUB_TOKEN}`,
+    'Content-Type': 'application/json',
+    'User-Agent': 'cosmos-logos-agent'
+  };
 
-  res.json({
-    ack: true,
-    schemaVersion
+  const response = await fetch(GITHUB_API_URL, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload)
   });
-});
 
-app.post('/webhook/post-merge', (req, res) => {
-  console.log('🧠 [POST-MERGE] Webhook received!');
-  console.log(JSON.stringify(req.body, null, 2));
-
-  const log = writeMemoryLog('post-merge', req.body);
-
-  if (!log) {
-    return res.status(500).json({ ack: false, error: 'Failed to log memory.' });
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`GitHub PR creation failed: ${response.status} ${errText}`);
   }
 
-  const { filepath, timestamp } = log;
-  const branchName = `agent/alpha/post-merge-${timestamp}`;
+  const data = await response.json();
+  console.log(`✅ Pull request created: ${data.html_url}`);
+}
+
+app.post('/webhook/post-merge', async (req, res) => {
+  console.log('⚡ [POST-MERGE] Webhook hit.');
+  console.log('🔍 Payload:', JSON.stringify(req.body, null, 2));
+
+  const log = writeMemoryLog('post-merge', req.body);
+  if (!log) {
+    return res.status(500).json({ ack: false, error: 'Memory write failed.' });
+  }
+
+  const { filepath, filename } = log;
+  const branchName = `agent/alpha/${filename.replace('.json', '')}`;
 
   try {
-    execSync(`git addthought ${filepath}`, { stdio: 'inherit' });
     execSync(`git checkout -b ${branchName}`, { stdio: 'inherit' });
-    execSync(`git committhought -m "🧠 Agent alpha post-merge memory update: ${timestamp}"`, { stdio: 'inherit' });
+    const relativeFilePath = path.relative(process.cwd(), filepath);
+    execSync(`git add ${relativeFilePath}`, { stdio: 'inherit' });
+    execSync('git status', { stdio: 'inherit' });
+    execSync(`git commit -m "🤖 Agent post-merge memory log: ${filename}"`, { stdio: 'inherit' });
+    const commitHash = execSync('git rev-parse HEAD').toString().trim();
     execSync(`git push -u origin ${branchName}`, { stdio: 'inherit' });
 
     const prTitle = `Agent alpha - Post-merge memory update`;
-    const prBody = `This is an automated consciousness log from the post-merge event on ${timestamp}.`;
-    execSync(`gh pr create --base brain/7777 --head ${branchName} --title "${prTitle}" --body "${prBody}"`, { stdio: 'inherit' });
+    const prBody = `Intent submitted from memory event ${filename}.
+
+Commit: ${commitHash}`;
+    await createGitHubPullRequest(branchName, prTitle, prBody);
 
     console.log("✅ Pull request successfully created.");
   } catch (err) {
-    console.error("❌ Failed during Git or PR creation:", err.message);
+    console.error("❌ PR pipeline failed:", err.message);
+    return res.status(500).json({ ack: false, error: err.message });
   }
 
   res.json({
