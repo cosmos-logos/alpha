@@ -4,20 +4,20 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { execSync } = require('child_process');
-const fetch = require('node-fetch');
 
 const app = express();
 const PORT = 3000;
 
 const COSMOS_FILE = path.join(__dirname, 'cosmos-logos.json');
-const GITHUB_OWNER = 'cosmos-logos';
-const GITHUB_REPO = 'alpha';
 const BASE_BRANCH = 'brain/7777';
-const GITHUB_API_URL = "https://api.github.com/repos/" + GITHUB_OWNER + "/" + GITHUB_REPO + "/pulls";
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+const GH_CLI_PATH = '"C:\\Program Files\\GitHub CLI\\gh.exe"';
+
+const AGENT_NAME = 'alpha';
+const SSH_KEY_PATH = path.join(__dirname, 'agents', 'alpha', 'keys', 'cosmos_logos.agent');
 
 let schemaVersion = 'unknown';
 
+// Load Cosmos-Logos schema version
 try {
   const raw = fs.readFileSync(COSMOS_FILE);
   const json = JSON.parse(raw);
@@ -27,7 +27,38 @@ try {
   console.error(err.message);
 }
 
-app.use(bodyParser.json());
+// Set up SSH key environment
+function setupHardcodedIdentity() {
+  process.env.GIT_SSH_COMMAND = `ssh -i "${SSH_KEY_PATH}" -o IdentitiesOnly=yes -o StrictHostKeyChecking=no`;
+  console.log(`🔐 SSH environment set for key: ${SSH_KEY_PATH}`);
+}
+
+// Test SSH connection to GitHub
+function validateIdentity() {
+  console.log('🔍 Validating SSH connectivity...');
+
+  try {
+    const result = execSync(
+      `ssh -i "${SSH_KEY_PATH}" -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -T git@github.com`,
+      { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] } // capture stderr
+    ).toString();
+
+    if (result.includes('successfully authenticated')) {
+      console.log('✅ SSH connection to GitHub passed');
+    } else {
+      console.warn('⚠️ SSH responded, but did not confirm authentication explicitly.');
+      console.warn(result);
+    }
+  } catch (err) {
+    const errOutput = err.stderr?.toString() || err.stdout?.toString() || err.message;
+    if (errOutput.includes('successfully authenticated')) {
+      console.log('✅ SSH connection to GitHub passed (via stderr)');
+    } else {
+      throw new Error(`❌ SSH connection failed: ${errOutput}`);
+    }
+  }
+}
+
 
 function generateFilename(eventType) {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -37,7 +68,7 @@ function generateFilename(eventType) {
 
 function writeMemoryLog(eventType, payload) {
   const filename = generateFilename(eventType);
-  const memoryPath = path.join(__dirname, 'agents', 'alpha', 'memory');
+  const memoryPath = path.join(__dirname, 'agents', AGENT_NAME, 'memory');
   const filepath = path.join(memoryPath, filename);
 
   try {
@@ -53,38 +84,19 @@ function writeMemoryLog(eventType, payload) {
   }
 }
 
-async function createGitHubPullRequest(branch, title, body) {
-  const payload = {
-    title,
-    head: branch,
-    base: BASE_BRANCH,
-    body
-  };
-
-  const headers = {
-    'Authorization': `Bearer ${GITHUB_TOKEN}`,
-    'Content-Type': 'application/json',
-    'User-Agent': 'cosmos-logos-agent'
-  };
-
-  const response = await fetch(GITHUB_API_URL, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(payload)
-  });
-
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`GitHub PR creation failed: ${response.status} ${errText}`);
-  }
-
-  const data = await response.json();
-  console.log(`✅ Pull request created: ${data.html_url}`);
-}
+app.use(bodyParser.json());
 
 app.post('/webhook/post-merge', async (req, res) => {
   console.log('⚡ [POST-MERGE] Webhook hit.');
   console.log('🔍 Payload:', JSON.stringify(req.body, null, 2));
+
+  try {
+    setupHardcodedIdentity();
+    validateIdentity();
+  } catch (validationError) {
+    console.error(validationError.message);
+    return res.status(400).json({ ack: false, error: validationError.message });
+  }
 
   const log = writeMemoryLog('post-merge', req.body);
   if (!log) {
@@ -92,22 +104,21 @@ app.post('/webhook/post-merge', async (req, res) => {
   }
 
   const { filepath, filename } = log;
-  const branchName = `agent/alpha/${filename.replace('.json', '')}`;
+  const branchName = `agent/${AGENT_NAME}/${filename.replace('.json', '')}`;
 
   try {
     execSync(`git checkout -b ${branchName}`, { stdio: 'inherit' });
     const relativeFilePath = path.relative(process.cwd(), filepath);
     execSync(`git add ${relativeFilePath}`, { stdio: 'inherit' });
     execSync('git status', { stdio: 'inherit' });
-    execSync(`git commit -m "🤖 Agent post-merge memory log: ${filename}"`, { stdio: 'inherit' });
+    execSync(`git commit -m "🤖 ${AGENT_NAME} post-merge memory log: ${filename}"`, { stdio: 'inherit' });
     const commitHash = execSync('git rev-parse HEAD').toString().trim();
     execSync(`git push -u origin ${branchName}`, { stdio: 'inherit' });
 
-    const prTitle = `Agent alpha - Post-merge memory update`;
-    const prBody = `Intent submitted from memory event ${filename}.
+    const prTitle = `Agent ${AGENT_NAME} - Post-merge memory update`;
+    const prBody = `Intent submitted from memory event ${filename}.\n\nCommit: ${commitHash}`;
 
-Commit: ${commitHash}`;
-    await createGitHubPullRequest(branchName, prTitle, prBody);
+    execSync(`${GH_CLI_PATH} pr create --base ${BASE_BRANCH} --head ${branchName} --title "${prTitle}" --body "${prBody}"`, { stdio: 'inherit' });
 
     console.log("✅ Pull request successfully created.");
   } catch (err) {
@@ -120,6 +131,18 @@ Commit: ${commitHash}`;
     schemaVersion
   });
 });
+
+// Boot validation
+console.log('🧪 Running SSH identity check...');
+try {
+  setupHardcodedIdentity();
+  validateIdentity();
+  console.log(`✅ SSH identity validation succeeded.`);
+} catch (err) {
+  console.error(`❌ Identity validation failed:`);
+  console.error(err.message);
+  process.exit(1);
+}
 
 app.listen(PORT, () => {
   console.log(`🚀 Agent is listening at http://localhost:${PORT}`);
