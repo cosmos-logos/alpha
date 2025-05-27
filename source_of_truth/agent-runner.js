@@ -5,6 +5,8 @@ const path = require('path');
 const crypto = require('crypto');
 const { execSync } = require('child_process');
 
+console.log('🔧 Starting agent-runner.js setup');
+
 const app = express();
 const PORT = 3000;
 
@@ -13,41 +15,78 @@ const BASE_BRANCH = 'brain/7777';
 const GH_CLI_PATH = '"C:\\Program Files\\GitHub CLI\\gh.exe"';
 
 const AGENT_NAME = 'alpha';
-const SSH_KEY_PATH = path.join(__dirname, 'agents', 'alpha', 'keys', 'cosmos_logos.agent');
+const SSH_KEY_PATH = path.join(__dirname, 'agents', AGENT_NAME, 'keys', 'cosmos_logos.agent');
+const GPG_KEY_PATH = path.join(__dirname, 'agents', AGENT_NAME, 'keys', 'cosmos_logos.private.key');
+const GPG_HOME = path.join(__dirname, '.gnupg', AGENT_NAME);
+const SIGNING_KEY_ID = 'B58C63840AA4D9B0';
+const GPG_EXE = '"C:\\Program Files (x86)\\GnuPG\\bin\\gpg.exe"';
 
 let schemaVersion = 'unknown';
 
-// Load Cosmos-Logos schema version
+console.log('📖 Attempting to load schema version');
 try {
   const raw = fs.readFileSync(COSMOS_FILE);
   const json = JSON.parse(raw);
   schemaVersion = json.schemaVersion || 'missing';
+  console.log(`✅ Loaded schema version: ${schemaVersion}`);
 } catch (err) {
   console.error("❌ Failed to load cosmos-logos.json");
   console.error(err.message);
 }
 
-// Set up SSH key environment
 function setupHardcodedIdentity() {
+  console.log('🔧 Setting up SSH + GPG identity environment');
+
   process.env.GIT_SSH_COMMAND = `ssh -i "${SSH_KEY_PATH}" -o IdentitiesOnly=yes -o StrictHostKeyChecking=no`;
-  console.log(`🔐 SSH environment set for key: ${SSH_KEY_PATH}`);
+  process.env.GIT_CONFIG_NOSYSTEM = '1';
+  process.env.GNUPGHOME = GPG_HOME;
+
+  console.log(`📦 Using GPG executable: ${GPG_EXE}`);
+
+  if (!fs.existsSync(GPG_HOME)) {
+    console.log('📁 Creating GPG home directory');
+    fs.mkdirSync(GPG_HOME, { recursive: true });
+  }
+
+  try {
+    console.log(`🔁 Importing GPG key from ${GPG_KEY_PATH}`);
+    execSync(`${GPG_EXE} --homedir "${GPG_HOME}" --import "${GPG_KEY_PATH}"`);
+    console.log(`🔐 GPG key imported into ${GPG_HOME}`);
+  } catch (err) {
+    console.error(`❌ GPG import failed: ${err.message}`);
+  }
+
+  try {
+    console.log('🚀 Launching gpg-agent');
+    execSync(`gpgconf --homedir "${GPG_HOME}" --launch gpg-agent`);
+    console.log(`🟢 gpg-agent launched`);
+  } catch (err) {
+    console.error(`⚠️ Failed to launch gpg-agent: ${err.message}`);
+  }
+
+  try {
+    console.log('🧭 Setting GPG_TTY');
+    process.env.GPG_TTY = execSync('tty', { encoding: 'utf8' }).trim();
+  } catch {
+    process.env.GPG_TTY = 'CON';
+    console.log(`📌 GPG_TTY fallback to CON`);
+  }
+
+  console.log(`🔐 SSH + GPG environment ready`);
 }
 
-// Test SSH connection to GitHub
 function validateIdentity() {
-  console.log('🔍 Validating SSH connectivity...');
-
+  console.log('🔍 Validating SSH connectivity');
   try {
     const result = execSync(
       `ssh -i "${SSH_KEY_PATH}" -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -T git@github.com`,
-      { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] } // capture stderr
+      { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }
     ).toString();
 
     if (result.includes('successfully authenticated')) {
       console.log('✅ SSH connection to GitHub passed');
     } else {
-      console.warn('⚠️ SSH responded, but did not confirm authentication explicitly.');
-      console.warn(result);
+      throw new Error(`❌ Unexpected SSH response:\n${result}`);
     }
   } catch (err) {
     const errOutput = err.stderr?.toString() || err.stdout?.toString() || err.message;
@@ -59,20 +98,24 @@ function validateIdentity() {
   }
 }
 
-
 function generateFilename(eventType) {
+  console.log(`📁 Generating filename for event: ${eventType}`);
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const hash = crypto.createHash('sha256').update(timestamp).digest('hex').slice(0, 8);
-  return `${timestamp}-${eventType}-${hash}.json`;
+  const filename = `${timestamp}-${eventType}-${hash}.json`;
+  console.log(`📦 Generated filename: ${filename}`);
+  return filename;
 }
 
 function writeMemoryLog(eventType, payload) {
+  console.log(`🧠 Writing memory log for event: ${eventType}`);
   const filename = generateFilename(eventType);
   const memoryPath = path.join(__dirname, 'agents', AGENT_NAME, 'memory');
   const filepath = path.join(memoryPath, filename);
 
   try {
     if (!fs.existsSync(memoryPath)) {
+      console.log('📁 Creating memory directory');
       fs.mkdirSync(memoryPath, { recursive: true });
     }
     fs.writeFileSync(filepath, JSON.stringify(payload, null, 2));
@@ -107,17 +150,29 @@ app.post('/webhook/post-merge', async (req, res) => {
   const branchName = `agent/${AGENT_NAME}/${filename.replace('.json', '')}`;
 
   try {
+    console.log(`🌱 Creating branch ${branchName}`);
     execSync(`git checkout -b ${branchName}`, { stdio: 'inherit' });
+
     const relativeFilePath = path.relative(process.cwd(), filepath);
+    console.log(`➕ Adding file ${relativeFilePath}`);
     execSync(`git add ${relativeFilePath}`, { stdio: 'inherit' });
+
+    console.log(`📦 Checking git status`);
     execSync('git status', { stdio: 'inherit' });
-    execSync(`git commit -m "🤖 ${AGENT_NAME} post-merge memory log: ${filename}"`, { stdio: 'inherit' });
-    const commitHash = execSync('git rev-parse HEAD').toString().trim();
+
+    console.log(`✍️ Committing with GPG signing (runtime key ID ${SIGNING_KEY_ID})`);
+    execSync(`git commit -m "🧠 Transaction log: ${filename}" -S${SIGNING_KEY_ID}`, { stdio: 'inherit' });
+
+    console.log(`🚀 Pushing branch to origin`);
     execSync(`git push -u origin ${branchName}`, { stdio: 'inherit' });
 
-    const prTitle = `Agent ${AGENT_NAME} - Post-merge memory update`;
-    const prBody = `Intent submitted from memory event ${filename}.\n\nCommit: ${commitHash}`;
+    const commitHash = execSync('git rev-parse HEAD').toString().trim();
+    console.log(`🔗 Commit hash: ${commitHash}`);
 
+    const prTitle = `🔁 Transaction Log: ${filename}`;
+    const prBody = `This pull request logs a transaction captured by agent **${AGENT_NAME}**.\n\n- **Memory File:** \`${filename}\`\n- **Schema Version:** \`${schemaVersion}\`\n- **Commit:** \`${commitHash}\``;
+
+    console.log(`📬 Creating pull request`);
     execSync(`${GH_CLI_PATH} pr create --base ${BASE_BRANCH} --head ${branchName} --title "${prTitle}" --body "${prBody}"`, { stdio: 'inherit' });
 
     console.log("✅ Pull request successfully created.");
@@ -132,7 +187,6 @@ app.post('/webhook/post-merge', async (req, res) => {
   });
 });
 
-// Boot validation
 console.log('🧪 Running SSH identity check...');
 try {
   setupHardcodedIdentity();
