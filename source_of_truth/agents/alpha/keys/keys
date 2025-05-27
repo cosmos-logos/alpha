@@ -116,3 +116,4 @@ gpg --export --armor 987CC775A58C0839 > alpha.gpg.public.key
 
 origi@odyssey1 MINGW64 /d/dev/repos/cosmos-logos/alpha/source_of_truth (@root-of-trust/neuralpathway/fa847e7-9a0266f-20250527034416)
 $ gpg --homedir .gnupg/alpha --import agents/alpha/keys/alpha.gpg.private.key
+
