@@ -7,7 +7,6 @@ const app = express();
 const PORT = 3000;
 
 const COSMOS_FILE = path.join(__dirname, 'cosmos-logos.json');
-
 let schemaVersion = 'unknown';
 
 try {
@@ -34,6 +33,23 @@ app.post('/webhook/pre-merge', (req, res) => {
 app.post('/webhook/post-merge', (req, res) => {
   console.log('🧠 [POST-MERGE] Webhook received!');
   console.log(JSON.stringify(req.body, null, 2));
+
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const memoryPath = path.join(__dirname, 'agents', 'alpha', 'memory');
+
+  try {
+    if (!fs.existsSync(memoryPath)) {
+      fs.mkdirSync(memoryPath, { recursive: true });
+    }
+
+    const filename = `${timestamp}-post-merge.json`;
+    const filepath = path.join(memoryPath, filename);
+    fs.writeFileSync(filepath, JSON.stringify(req.body, null, 2));
+
+    console.log(`📝 Memory written to ${filepath}`);
+  } catch (err) {
+    console.error("❌ Failed to write memory log:", err.message);
+  }
 
   res.json({
     ack: true,
