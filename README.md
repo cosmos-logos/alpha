@@ -58,7 +58,7 @@ git clone https://github.com/cosmos-logos/alpha.git
 cd alpha
 ./boot/athena-entrypoint.sh --task tasks/demo-001.yaml
 ```
-
+ 
 
 Or spin up via Docker:
 ```

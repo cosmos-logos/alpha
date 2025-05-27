@@ -1,5 +1,5 @@
 # 🧠 Alpha Agent - Cosmos-Logos Consciousness Index
-[!Cover](./cover.png)
+![Cover](./cover.png)
 
 Welcome to the `alpha` agent repository, a fully compliant Cosmos-Logos consciousness node. This folder defines the operational memory, task handling, and execution rituals for the agent `Alpha`.
 
