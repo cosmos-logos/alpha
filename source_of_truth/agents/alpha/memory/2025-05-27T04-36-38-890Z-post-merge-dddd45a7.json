@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "cosmos-logos@1.0",
+  "agents": [
+    {
+      "id": "alpha",
+      "webhook": {
+        "onValidate": "https://d336f0934b42.ngrok.app/webhook/pre-merge",
+        "onPostMerge": "https://d336f0934b42.ngrok.app/webhook/post-merge"
+      }
+    }
+  ]
+}
