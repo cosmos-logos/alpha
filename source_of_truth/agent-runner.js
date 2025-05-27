@@ -70,10 +70,31 @@ function scopedEnv(GPG_HOME, SSH_CONFIG_PATH) {
   };
 }
 
-function validateSSH(SSH_CONFIG_PATH) {
-  console.log('🔍 Validating SSH connection...');
-  execSync(`ssh -F "${SSH_CONFIG_PATH}" -T git@github.com`, { stdio: 'inherit' });
+function validateSSH(sshConfigPath) {
+  console.log('🔍 Validating SSH identity with agent key only...');
+
+  try {
+    const output = execSync(`ssh -F "${sshConfigPath}" -T git@github.com`, {
+      stdio: ['pipe', 'pipe', 'pipe']
+    }).toString();
+
+    console.log('✅ SSH validated successfully:\n' + output);
+  } catch (err) {
+    const stdout = err.stdout?.toString() || '';
+    const stderr = err.stderr?.toString() || '';
+    const combined = `${stdout}\n${stderr}`;
+
+    if (combined.includes("successfully authenticated")) {
+      console.log('✅ SSH validated (non-zero exit ignored):\n' + combined);
+    } else {
+      console.error('❌ SSH validation failed:\n' + combined);
+      throw new Error(`SSH validation failed:\n${combined}`);
+    }
+  }
 }
+
+
+
 
 function writeMemoryLog(MEMORY_PATH, eventType, payload) {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
