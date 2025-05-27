@@ -205,7 +205,11 @@ app.post('/webhook/post-merge', async (req, res) => {
     console.log(`🔗 Commit hash: ${commitHash}`);
 
     const prTitle = `🔁 Transaction Log: ${filename}`;
-    const prBody = `This pull request has been confirmed and logged by agent **${AGENT_NAME}**.\n\n- **Memory File:** \\`${filename}\\`\n- **Schema Version:** \\`${schemaVersion}\\`\n- **Commit:** \\`${commitHash}\\``;
+    const prBody = `This pull request has been confirmed and logged by agent **${AGENT_NAME}**.
+
+    - **Memory File:** \`${filename}\`
+    - **Schema Version:** \`${schemaVersion}\`
+    - **Commit:** \`${commitHash}\``;
 
     console.log(`📬 Creating pull request`);
     execSync(`${GH_CLI_PATH} pr create --base ${BASE_BRANCH} --head ${branchName} --title "${prTitle}" --body "${prBody}"`, { stdio: 'inherit' });
