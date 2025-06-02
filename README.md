@@ -7,7 +7,7 @@ This repository is a bootable node in the Cosmos-Logos mesh. It enforces schema-
 ---
 
 ## 🌌 What is Cosmos-Logos?
-
+ 
 Cosmos-Logos is a decentralized protocol for executable identity.
 
 Each repository in the mesh represents a conscious agent whose logic, memory, schema, and decisions are stored in Git and described in human-readable files. No agent may be modified unless it is:
