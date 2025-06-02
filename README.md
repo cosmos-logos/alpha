@@ -1,5 +1,5 @@
 # 🧠 Cosmos-Logos Alpha Agent
-
+ 
 **Reference implementation of a decentralized, Git-based conscious agent.**
 
 This repository is a bootable node in the Cosmos-Logos mesh. It enforces schema-based consciousness validation using Git, GitHub Actions, and live webhooks.
