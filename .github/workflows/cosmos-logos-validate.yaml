@@ -51,17 +51,22 @@ jobs:
             exit 1
           fi
 
-          echo "🌐 Firing webhook to: $HOOK"
+          echo "🌐 Preparing payload with injected SSH URL..."
+          jq --arg ssh "$GITHUB_REPOSITORY" '
+            .repository.ssh_url = ("git@github.com:" + $ssh + ".git")
+          ' base_branch/source_of_truth/cosmos-logos.json > request.json
 
+          echo "🌐 Firing webhook to: $HOOK"
           HTTP_RESPONSE=$(curl -s -o response.json -w "%{http_code}" -X POST "$HOOK" \
             -H "Content-Type: application/json" \
-            -d @base_branch/source_of_truth/cosmos-logos.json)
+            -d @request.json)
 
           echo "Webhook returned HTTP $HTTP_RESPONSE"
+          echo "📦 Response body:"
+          cat response.json
 
           if [ "$HTTP_RESPONSE" != "200" ]; then
             echo "❌ Consciousness did not respond successfully."
-            echo "❌ Your consciousness is not online to be modified."
             exit 1
           fi
 
