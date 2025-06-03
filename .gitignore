@@ -3,3 +3,4 @@ source_of_truth/node_modules/
 source_of_truth/.gnupg/
 source_of_truth/agents/alpha/keys/alpha.gpg.private.key
 source_of_truth/agents/alpha/keys/alpha.ssh.private.key
+.DS_Store

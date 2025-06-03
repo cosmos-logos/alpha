@@ -12,7 +12,16 @@ const app = express();
 const PORT = 3000;
 const BASE_BRANCH = 'brain/7777';
 //const GH_CLI_PATH = '"C:\\Program Files\\GitHub CLI\\gh.exe"';
-const GH_CLI_PATH = 'gh'; // assumes `gh` is in your macOS $PATH
+//const GH_CLI_PATH = 'gh'; // assumes `gh` is in your macOS $PATH
+//const GH_CLI_PATH = '/opt/homebrew/bin/gh'; // or whatever `which gh` shows
+const GH_CLI_PATH = (() => {
+  try {
+    return execSync('which gh', { encoding: 'utf8' }).trim();
+  } catch {
+    console.error('❌ GitHub CLI not found in PATH. Install it or set GH_CLI_PATH manually.');
+    process.exit(1);
+  }
+})();
 //const GPG_EXE = '"C:\\Program Files (x86)\\GnuPG\\bin\\gpg.exe"';
 const GPG_EXE = '/usr/local/bin/gpg'; // or run: which gpg
 
@@ -75,7 +84,8 @@ function scopedEnv(GPG_HOME, SSH_CONFIG_PATH) {
     ...process.env,
     GNUPGHOME: GPG_HOME,
     GIT_SSH_COMMAND: `ssh -F "${SSH_CONFIG_PATH}"`,
-    GPG_TTY: tty
+    GPG_TTY: tty,
+    PATH: `${process.env.PATH}:/opt/homebrew/bin` // make gh accessible in Docker or isolated shell
   };
 }
 
@@ -177,17 +187,37 @@ app.post('/webhook/pre-merge', (req, res) => {
     const { filename, filepath } = writeMemoryLog(premergeMemoryPath, 'pre-merge', req.body);
 
     const schemaVersion = loadCosmosFile();
+    
+    // 🔗 Set Git remote URL from webhook
+    const repoURL = req.body?.repository?.ssh_url;
+    if (!repoURL) {
+      throw new Error("Missing repository SSH URL from webhook payload");
+    }
+    console.log(`🌐 Setting origin to: ${repoURL}`);
+    execSync(`git remote set-url origin ${repoURL}`, { stdio: 'inherit', env });
+
     const branch = `agent/${AGENT_NAME}/pre-merge/${filename.replace('.json', '')}`;
 
     // Git workflow
     execSync(`git checkout -b ${branch}`, { stdio: 'inherit', env });
     execSync(`git config user.name "${AGENT_NAME} agent"`, { env });
     execSync(`git config user.email "${AGENT_NAME}@cosmos-logos.org"`, { env });
-    execSync(`git config user.signingkey 987CC775A58C0839`, { env });
+    execSync(`git config --local user.signingkey 987CC775A58C0839`, { env });
     execSync(`git config commit.gpgsign true`, { env });
 
     execSync(`git add ${path.relative(process.cwd(), filepath)}`, { stdio: 'inherit', env });
     execSync(`git commit -m "🧠 Pre-Merge log: ${filename}" -S`, { stdio: 'inherit', env });
+
+    // 🔍 Verbose push debug
+    console.log(`🚀 Pushing branch '${branch}' to remote 'origin'...`);
+    console.log(`📂 Current working directory: ${process.cwd()}`);
+    try {
+      const remotes = execSync('git remote -v', { encoding: 'utf8' });
+      console.log(`📄 Git remotes:\n${remotes}`);
+    } catch (remoteErr) {
+      console.error('❌ Failed to list git remotes:', remoteErr.message);
+    }
+
     execSync(`git push -u origin ${branch}`, { stdio: 'inherit', env });
 
     const commitHash = execSync('git rev-parse HEAD', { env }).toString().trim();
@@ -223,7 +253,7 @@ app.post('/webhook/post-merge', (req, res) => {
     execSync(`git checkout -b ${branch}`, { stdio: 'inherit', env });
     execSync(`git config user.name "${AGENT_NAME} agent"`, { env });
     execSync(`git config user.email "${AGENT_NAME}@cosmos-logos.org"`, { env });
-    execSync(`git config user.signingkey ${req.body.signingKey || ''}`, { env });
+    execSync(`git config --local user.signingkey ${req.body.signingKey || ''}`, { env });
     execSync(`git config commit.gpgsign true`, { env });
 
     execSync(`git add ${path.relative(process.cwd(), filepath)}`, { stdio: 'inherit', env });
