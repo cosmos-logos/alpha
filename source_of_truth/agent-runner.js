@@ -12,7 +12,8 @@ const app = express();
 const PORT = 3000;
 const BASE_BRANCH = 'brain/7777';
 const GH_CLI_PATH = '"C:\\Program Files\\GitHub CLI\\gh.exe"';
-const GPG_EXE = '"C:\\Program Files (x86)\\GnuPG\\bin\\gpg.exe"';
+//const GPG_EXE = '"C:\\Program Files (x86)\\GnuPG\\bin\\gpg.exe"';
+const GPG_EXE = '/usr/local/bin/gpg'; // or run: which gpg
 
 app.use(bodyParser.json());
 
@@ -63,10 +64,12 @@ function setupGPG(GPG_HOME, GPG_KEY_PATH) {
 }
 
 function scopedEnv(GPG_HOME, SSH_CONFIG_PATH) {
+  const tty = execSync('tty', { encoding: 'utf8' }).trim();
   return {
     ...process.env,
     GNUPGHOME: GPG_HOME,
-    GIT_SSH_COMMAND: `ssh -F "${SSH_CONFIG_PATH}"`
+    GIT_SSH_COMMAND: `ssh -F "${SSH_CONFIG_PATH}"`,
+    GPG_TTY: tty
   };
 }
 
@@ -174,6 +177,7 @@ app.post('/webhook/pre-merge', (req, res) => {
     execSync(`git checkout -b ${branch}`, { stdio: 'inherit', env });
     execSync(`git config user.name "${AGENT_NAME} agent"`, { env });
     execSync(`git config user.email "${AGENT_NAME}@cosmos-logos.org"`, { env });
+    execSync(`git config user.signingkey 987CC775A58C0839`, { env });
     execSync(`git config commit.gpgsign true`, { env });
 
     execSync(`git add ${path.relative(process.cwd(), filepath)}`, { stdio: 'inherit', env });
@@ -243,4 +247,3 @@ app.listen(PORT, () => {
   verboseBootDiagnostics(config);
   console.log(`🚀 Agent server ready at http://localhost:${PORT}`);
 });
-
