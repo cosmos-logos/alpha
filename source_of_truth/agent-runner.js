@@ -11,7 +11,8 @@ console.log('🔧 Booting agent-server-sshlocked.js');
 const app = express();
 const PORT = 3000;
 const BASE_BRANCH = 'brain/7777';
-const GH_CLI_PATH = '"C:\\Program Files\\GitHub CLI\\gh.exe"';
+//const GH_CLI_PATH = '"C:\\Program Files\\GitHub CLI\\gh.exe"';
+const GH_CLI_PATH = 'gh'; // assumes `gh` is in your macOS $PATH
 //const GPG_EXE = '"C:\\Program Files (x86)\\GnuPG\\bin\\gpg.exe"';
 const GPG_EXE = '/usr/local/bin/gpg'; // or run: which gpg
 
@@ -64,7 +65,12 @@ function setupGPG(GPG_HOME, GPG_KEY_PATH) {
 }
 
 function scopedEnv(GPG_HOME, SSH_CONFIG_PATH) {
-  const tty = execSync('tty', { encoding: 'utf8' }).trim();
+  let tty = '/dev/ttys000'; // default fallback
+  try {
+    tty = execSync('tty', { encoding: 'utf8' }).trim();
+  } catch (err) {
+    console.warn('⚠️ Unable to resolve tty for GPG_TTY. Using fallback:', tty);
+  }
   return {
     ...process.env,
     GNUPGHOME: GPG_HOME,
