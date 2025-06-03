@@ -4,8 +4,8 @@
     {
       "id": "alpha",
       "webhook": {
-        "onValidate": "https://bf368e059042.ngrok.app/webhook/pre-merge",
-        "onPostMerge": "https://bf368e059042.ngrok.app/webhook/post-merge"
+        "onValidate": "https://929c95a8b98b.ngrok.app/webhook/pre-merge",
+        "onPostMerge": "https://929c95a8b98b.ngrok.app/webhook/post-merge"
       }
     }
   ]

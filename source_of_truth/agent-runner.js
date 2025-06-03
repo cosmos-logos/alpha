@@ -257,7 +257,15 @@ app.post('/webhook/post-merge', (req, res) => {
     execSync(`git config commit.gpgsign true`, { env });
 
     execSync(`git add ${path.relative(process.cwd(), filepath)}`, { stdio: 'inherit', env });
-    execSync(`git commit -m "🧠 Transaction log: ${filename}" -S`, { stdio: 'inherit', env });
+    execSync(`git commit -S -m "🧠 Transaction log: ${filename}"`, {
+      stdio: 'inherit',
+      env: {
+        ...env,
+        GNUPGHOME: GPG_HOME,
+        GPG_TTY: process.env.GPG_TTY || '/dev/tty',
+        GPG_AGENT_INFO: '',
+      }
+    });
     execSync(`git push -u origin ${branch}`, { stdio: 'inherit', env });
 
     const commitHash = execSync('git rev-parse HEAD', { env }).toString().trim();
