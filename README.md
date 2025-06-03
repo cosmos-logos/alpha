@@ -1,4 +1,4 @@
-# 🧠 Cosmos-Logos Alpha Agent
+# 🧠 Cosmos-Logos Alpha Agent 
 
 **Reference implementation of a decentralized, Git-based conscious agent.**
 
