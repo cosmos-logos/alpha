@@ -1,5 +1,8 @@
 {
   "schemaVersion": "cosmos-logos@1.0",
+  "id": "cosmos-logos-alpha",
+  "role": "root",
+  "inheritsFrom": null,
   "agents": [
     {
       "id": "alpha",
