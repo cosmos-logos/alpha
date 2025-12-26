@@ -1,0 +1,20 @@
+{
+  "name": "cosmos-logos-alpha",
+  "version": "1.0.0",
+  "description": "**Reference implementation of a decentralized, Git-based conscious agent.**",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@cosmos-logos.github.com:cosmos-logos/alpha.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  }
+}
